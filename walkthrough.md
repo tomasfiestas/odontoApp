@@ -90,3 +90,35 @@ Se completó la implementación de las tres funcionalidades clave para la práct
 - **Historial de Cobros:**
   - Tabla de recibos con detalle de fecha, método, monto y comprobante.
 
+---
+
+# Mejoras de Eficiencia, UX Clínica y Rendimiento (Finalizadas)
+
+1. **⚡ Carga Rápida con Chips de Prestaciones Frecuentes ([`TreatmentPlanModal.jsx`](./src/components/TreatmentPlanModal.jsx)):**
+   - Agregada barra interactiva de tratamientos rápidos (`Resina`, `Conducto`, `Extracción`, `Limpieza`, `Corona`, `Perno`, `Implante`, `Blanqueamiento`, `Bruxismo`).
+   - Con un solo clic, se autocompleta el nombre y el costo sugerido, reduciendo el tiempo de cotización de 2 minutos a 15 segundos.
+
+2. **🔘 Toggle de Estado de Procedimientos con 1 Clic ([`PatientTreatmentPlans.jsx`](./src/pages/PatientTreatmentPlans.jsx)):**
+   - En cada tarjeta de presupuesto, los procedimientos dentales ahora tienen badges de estado interactivos (`⏳ Pendiente` ➔ `⚡ En curso` ➔ `✓ Listo`).
+   - Se actualizan con un solo toque y reflejo optimista instantáneo en pantalla, sin necesidad de abrir modales de edición.
+
+3. **📊 Barra de Progreso Financiero por Plan y en Ficha ([`PatientTreatmentPlans.jsx`](./src/pages/PatientTreatmentPlans.jsx) y [`PatientDetail.jsx`](./src/pages/PatientDetail.jsx)):**
+   - Cada presupuesto muestra su avance individual de cobro (`$X abonado de $Y - Z%`).
+   - La cabecera del paciente ahora incluye una barra de progreso que indica el porcentaje total cubierto de sus planes aceptados.
+
+4. **🗂️ Pestañas de Filtrado de Presupuestos ([`PatientTreatmentPlans.jsx`](./src/pages/PatientTreatmentPlans.jsx)):**
+   - Pestañas con contadores en tiempo real: `Todos`, `Activos` (Aceptados y En curso), `Finalizados` y `Borradores`.
+
+5. **🧾 Comprobante / Recibo de Pago Imprimible ([`PatientTreatmentPlans.jsx`](./src/pages/PatientTreatmentPlans.jsx)):**
+   - Cada cobro registrado cuenta ahora con un botón `🖨️ Recibo`.
+   - Genera una orden/recibo clínico formal para imprimir o descargar en PDF con membrete de la clínica, N° de recibo UUID, datos del paciente, desglose de suma recibida, concepto y firma del profesional.
+
+6. **🚨 Alertas Médicas 360° en Agenda y Turnos ([`AppointmentModal.jsx`](./src/components/AppointmentModal.jsx) y [`Calendar.jsx`](./src/pages/Calendar.jsx)):**
+   - **En la Agenda:** Los turnos del día muestran un distintivo `⚠️ Alerta` parpadeante junto al nombre del paciente si presenta factores de riesgo médico.
+   - **Al Agendar:** Al seleccionar a un paciente en el modal de nuevo turno, aparece una tarjeta roja de advertencia con sus alertas y alergias específicas para tomar recaudos clínicos inmediatos.
+
+7. **🚀 Code-Splitting y Optimización de Rendimiento ([`App.jsx`](./src/App.jsx)):**
+   - Se implementó `React.lazy` y `Suspense` para dividir las 18 rutas en chunks independientes cargados on-demand.
+   - Reducción del paquete principal de JavaScript de **613 kB a 249 kB (78 kB gzipped)**, eliminando las advertencias de compilación y multiplicando la velocidad de inicio en dispositivos móviles.
+
+

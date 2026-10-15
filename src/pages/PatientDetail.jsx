@@ -202,36 +202,58 @@ const PatientDetail = () => {
                 </div>
             )}
 
-            {/* Financial Balance Summary Banner (Semáforo de Saldo) */}
-            <div className="bg-white rounded-2xl border border-pastel p-4 sm:p-5 mb-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className={`w-3.5 h-3.5 rounded-full shrink-0 ${financial.balanceDue <= 0 ? 'bg-success' : 'bg-error animate-pulse'}`} />
-                    <div>
-                        <span className="text-[10px] font-bold text-dark/40 uppercase tracking-wider block">
-                            Cuenta Corriente / Saldo
-                        </span>
-                        <h3 className="text-base font-extrabold text-dark">
-                            {financial.balanceDue <= 0
-                                ? '🟢 Al día (Sin saldo pendiente)'
-                                : `🔴 Saldo Deudor: $ ${new Intl.NumberFormat('es-AR').format(financial.balanceDue)}`}
-                        </h3>
+            {/* Financial Balance Summary Banner (Semáforo de Saldo y Progreso) */}
+            <div className="bg-white rounded-2xl border border-pastel p-4 sm:p-5 mb-6 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-3.5 h-3.5 rounded-full shrink-0 ${financial.balanceDue <= 0 ? 'bg-success' : 'bg-error animate-pulse'}`} />
+                        <div>
+                            <span className="text-[10px] font-bold text-dark/40 uppercase tracking-wider block">
+                                Cuenta Corriente / Saldo del Paciente
+                            </span>
+                            <h3 className="text-base font-extrabold text-dark">
+                                {financial.balanceDue <= 0
+                                    ? '🟢 Al día (Sin saldo pendiente)'
+                                    : `🔴 Saldo Deudor: $ ${new Intl.NumberFormat('es-AR').format(financial.balanceDue)}`}
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPaymentModalOpen(true)}
+                            className="bg-pastel-light hover:bg-pastel text-dark text-xs font-semibold px-3 py-2 rounded-xl border border-pastel transition-colors cursor-pointer"
+                        >
+                            💰 + Registrar Cobro
+                        </button>
+                        <Link
+                            to={`/patients/${id}/plans`}
+                            className="bg-accent hover:bg-accent-hover text-dark text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs"
+                        >
+                            Ver Presupuestos
+                        </Link>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setPaymentModalOpen(true)}
-                        className="bg-pastel-light hover:bg-pastel text-dark text-xs font-semibold px-3 py-2 rounded-xl border border-pastel transition-colors cursor-pointer"
-                    >
-                        💰 + Registrar Cobro
-                    </button>
-                    <Link
-                        to={`/patients/${id}/plans`}
-                        className="bg-accent hover:bg-accent-hover text-dark text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs"
-                    >
-                        Ver Presupuestos
-                    </Link>
-                </div>
+                {financial.totalPlans > 0 && (
+                    <div className="pt-3 border-t border-pastel/40">
+                        <div className="flex justify-between items-center text-[11px] mb-1.5 text-dark/60">
+                            <span>
+                                Total Presupuestado: <strong className="text-dark font-semibold">$ {new Intl.NumberFormat('es-AR').format(financial.totalPlans)}</strong> · 
+                                Cobrado: <strong className="text-success font-semibold">$ {new Intl.NumberFormat('es-AR').format(financial.totalPaid)}</strong>
+                            </span>
+                            <span className="font-bold text-dark/80">
+                                {Math.min(100, Math.round((financial.totalPaid / financial.totalPlans) * 100))}% cancelado
+                            </span>
+                        </div>
+                        <div className="w-full bg-pastel-light rounded-full h-1.5 overflow-hidden">
+                            <div
+                                className={`h-full transition-all duration-500 ${financial.balanceDue <= 0 ? 'bg-success' : 'bg-accent'}`}
+                                style={{ width: `${Math.min(100, Math.round((financial.totalPaid / financial.totalPlans) * 100))}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Action buttons */}

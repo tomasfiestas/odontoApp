@@ -12,6 +12,18 @@ const TOOTH_NUMBERS = [
     '31', '32', '33', '34', '35', '36', '37', '38',
 ]
 
+export const COMMON_PROCEDURES = [
+    { label: '🦷 Resina', name: 'Restauración Resina Fotocurable', cost: 25000 },
+    { label: '⚡ Conducto', name: 'Tratamiento de Conducto (Endodoncia)', cost: 60000 },
+    { label: '🦷 Extracción', name: 'Extracción Dental Simple', cost: 20000 },
+    { label: '✨ Limpieza', name: 'Limpieza y Tartrectomía', cost: 18000 },
+    { label: '👑 Corona', name: 'Corona de Porcelana / Zirconio', cost: 120000 },
+    { label: '📌 Perno', name: 'Perno y Muñón Colado', cost: 40000 },
+    { label: '🔩 Implante', name: 'Implante Dental Quirúrgico', cost: 250000 },
+    { label: '💎 Blanqueamiento', name: 'Blanqueamiento Dental', cost: 50000 },
+    { label: '🛡️ Bruxismo', name: 'Placa Miorrelajante Rígida', cost: 45000 },
+]
+
 const emptyItem = {
     tooth_number: 'General',
     procedure_name: '',
@@ -70,6 +82,30 @@ const TreatmentPlanModal = ({ isOpen, onClose, onSaved, patientId, clinicId, pla
 
     const addItem = () => {
         setItems((prev) => [...prev, { ...emptyItem }])
+    }
+
+    const addPresetItem = (preset) => {
+        const itemCost = currency === 'USD' ? Math.round(preset.cost / 1200) : preset.cost
+        setItems((prev) => {
+            // Replace if only one pristine empty item
+            if (prev.length === 1 && !prev[0].procedure_name && !prev[0].cost) {
+                return [{
+                    tooth_number: 'General',
+                    procedure_name: preset.name,
+                    cost: itemCost,
+                    status: 'pendiente',
+                }]
+            }
+            return [
+                ...prev,
+                {
+                    tooth_number: 'General',
+                    procedure_name: preset.name,
+                    cost: itemCost,
+                    status: 'pendiente',
+                },
+            ]
+        })
     }
 
     const removeItem = (index) => {
@@ -284,6 +320,26 @@ const TreatmentPlanModal = ({ isOpen, onClose, onSaved, patientId, clinicId, pla
                             >
                                 <span>+ Agregar prestación</span>
                             </button>
+                        </div>
+
+                        {/* Quick Presets Bar */}
+                        <div className="mb-3">
+                            <span className="text-[10px] font-bold text-dark/40 uppercase tracking-wider block mb-1.5">
+                                ⚡ Carga Rápida (1 Clic)
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {COMMON_PROCEDURES.map((preset) => (
+                                    <button
+                                        key={preset.label}
+                                        type="button"
+                                        onClick={() => addPresetItem(preset)}
+                                        className="text-[11px] font-medium bg-pastel-light hover:bg-pastel text-dark border border-pastel px-2 py-1 rounded-lg transition-colors cursor-pointer"
+                                        title={`Agregar ${preset.name}`}
+                                    >
+                                        {preset.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">

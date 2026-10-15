@@ -1,28 +1,38 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import PrivateRoute from './router/PrivateRoute'
 import Layout from './components/Layout'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Home from './pages/Home'
-import Patients from './pages/Patients'
-import PatientDetail from './pages/PatientDetail'
-import ClinicalHistory from './pages/ClinicalHistory'
-import PatientAppointments from './pages/PatientAppointments'
-import PatientOdontogram from './pages/PatientOdontogram'
-import Calendar from './pages/Calendar'
-import Clinics from './pages/Clinics'
-import Billing from './pages/Billing'
-import Settings from './pages/Settings'
-import PatientFiles from './pages/PatientFiles'
-import PatientUpload from './pages/PatientUpload'
-import PatientTreatmentPlans from './pages/PatientTreatmentPlans'
 
-import AppointmentAction from './pages/AppointmentAction'
+// Lazy-loaded views for instant loading and code-splitting
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Home = lazy(() => import('./pages/Home'))
+const Patients = lazy(() => import('./pages/Patients'))
+const PatientDetail = lazy(() => import('./pages/PatientDetail'))
+const ClinicalHistory = lazy(() => import('./pages/ClinicalHistory'))
+const PatientAppointments = lazy(() => import('./pages/PatientAppointments'))
+const PatientOdontogram = lazy(() => import('./pages/PatientOdontogram'))
+const Calendar = lazy(() => import('./pages/Calendar'))
+const Clinics = lazy(() => import('./pages/Clinics'))
+const Billing = lazy(() => import('./pages/Billing'))
+const Settings = lazy(() => import('./pages/Settings'))
+const PatientFiles = lazy(() => import('./pages/PatientFiles'))
+const PatientUpload = lazy(() => import('./pages/PatientUpload'))
+const PatientTreatmentPlans = lazy(() => import('./pages/PatientTreatmentPlans'))
+const AppointmentAction = lazy(() => import('./pages/AppointmentAction'))
+
+function PageFallback() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-3 border-accent border-t-transparent animate-spin" />
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -30,7 +40,8 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <ToastProvider>
-            <Routes>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -68,6 +79,7 @@ function App() {
               {/* Catch-all redirect */}
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
+          </Suspense>
           </ToastProvider>
         </AuthProvider>
       </BrowserRouter>

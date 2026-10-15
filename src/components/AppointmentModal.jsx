@@ -22,6 +22,7 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
     // Smart Scheduler State
     const [bookedTimes, setBookedTimes] = useState([])
     const [loadingTimes, setLoadingTimes] = useState(false)
+    const [selectedPatientData, setSelectedPatientData] = useState(defaultPatient || null)
 
     // Reset form on open
     useEffect(() => {
@@ -34,6 +35,7 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
                 treatment: '',
                 notes: '',
             })
+            setSelectedPatientData(defaultPatient || null)
             setSearchPatient(defaultPatient ? `${defaultPatient.last_name}, ${defaultPatient.first_name}` : '')
             setErrors({})
             setApiError('')
@@ -59,7 +61,7 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
         const fetchPatients = async () => {
             let query = supabase
                 .from('patients')
-                .select('id, first_name, last_name, dni')
+                .select('id, first_name, last_name, dni, medical_alerts, allergies, medical_notes')
                 .order('last_name', { ascending: true })
                 .limit(20)
 
@@ -122,6 +124,7 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
 
     const selectPatient = (patient) => {
         setForm((prev) => ({ ...prev, patient_id: patient.id }))
+        setSelectedPatientData(patient)
         setSearchPatient(`${patient.last_name}, ${patient.first_name}`)
         setPatients([])
         if (errors.patient_id) setErrors((prev) => ({ ...prev, patient_id: '' }))
@@ -220,6 +223,7 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
                                     setSearchPatient(e.target.value)
                                     if (form.patient_id) {
                                         setForm((prev) => ({ ...prev, patient_id: '' }))
+                                        setSelectedPatientData(null)
                                     }
                                 }}
                                 placeholder="Buscar por apellido..."
@@ -235,6 +239,22 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
                         </div>
                         {errors.patient_id && <p className="text-xs text-error mt-1">{errors.patient_id}</p>}
 
+                        {/* Medical Alert Warning for Scheduled Patient */}
+                        {selectedPatientData && (selectedPatientData.medical_alerts?.length > 0 || selectedPatientData.allergies) && (
+                            <div className="mt-2 p-2.5 rounded-xl bg-error/10 border border-error/30 flex items-start gap-2 text-xs text-error animate-pulse">
+                                <span className="text-sm shrink-0">🚨</span>
+                                <div>
+                                    <strong className="font-bold block uppercase tracking-wider text-[10px]">
+                                        Alerta Clínica / Anamnesis Crítica
+                                    </strong>
+                                    <p className="font-semibold text-error">
+                                        {selectedPatientData.medical_alerts?.join(' · ') || ''}
+                                        {selectedPatientData.allergies ? ` (${selectedPatientData.allergies})` : ''}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Dropdown results */}
                         {showDropdown && (
                             <div className="absolute z-10 w-full mt-1 bg-white rounded-xl border border-pastel shadow-lg max-h-48 overflow-y-auto">
@@ -246,7 +266,14 @@ const AppointmentModal = ({ isOpen, onClose, onSaved, defaultDate = '', defaultP
                                         className="w-full px-3 py-2.5 text-left hover:bg-pastel-light transition-colors text-sm cursor-pointer
                                flex items-center justify-between"
                                     >
-                                        <span className="font-medium text-dark">{p.last_name}, {p.first_name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-dark">{p.last_name}, {p.first_name}</span>
+                                            {(p.medical_alerts?.length > 0 || p.allergies) && (
+                                                <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">
+                                                    ⚠️ Alerta
+                                                </span>
+                                            )}
+                                        </div>
                                         <span className="text-xs text-dark/30">DNI: {p.dni}</span>
                                     </button>
                                 ))}

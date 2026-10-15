@@ -53,7 +53,7 @@ const Calendar = () => {
 
         let query = supabase
             .from('appointments')
-            .select('*, patients(first_name, last_name), clinics(name)')
+            .select('*, patients(first_name, last_name, medical_alerts), clinics(name)')
             .eq('doctor_id', user.id)
             .gte('date', startDate)
             .lte('date', endDate)
@@ -256,8 +256,16 @@ const Calendar = () => {
 
                                             {/* Info */}
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-dark truncate">
-                                                    {apt.patients?.last_name}, {apt.patients?.first_name}
+                                                <p className="text-sm font-medium text-dark truncate flex items-center gap-1.5">
+                                                    <span>{apt.patients?.last_name}, {apt.patients?.first_name}</span>
+                                                    {apt.patients?.medical_alerts && apt.patients.medical_alerts.length > 0 && (
+                                                        <span
+                                                            className="inline-flex items-center gap-0.5 text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-md animate-pulse shrink-0"
+                                                            title={`Alerta Médica: ${apt.patients.medical_alerts.join(', ')}`}
+                                                        >
+                                                            ⚠️ Alerta
+                                                        </span>
+                                                    )}
                                                 </p>
                                                 <p className="text-xs text-dark/40 truncate">{apt.treatment}</p>
                                             </div>
