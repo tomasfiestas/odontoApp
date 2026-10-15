@@ -1,52 +1,95 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const PatientUpload = () => {
-    const { id: patientId } = useParams()
+    const { token: urlToken, id: urlId } = useParams()
+    const tokenOrId = urlToken || urlId
+
     const fileInputRef = useRef(null)
 
     const [patient, setPatient] = useState(null)
+    const [tokenRecord, setTokenRecord] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [linkState, setLinkState] = useState('valid') // 'valid' | 'already_used' | 'expired' | 'invalid'
+    const [errorMessage, setErrorMessage] = useState(null)
+
+    // Form states
     const [selectedFiles, setSelectedFiles] = useState([])
     const [uploadType, setUploadType] = useState('radiografia')
     const [notes, setNotes] = useState('')
     const [uploading, setUploading] = useState(false)
     const [progress, setProgress] = useState(0)
     const [submitted, setSubmitted] = useState(false)
-    const [errorMsg, setErrorMsg] = useState(null)
 
     useEffect(() => {
-        const fetchPatient = async () => {
+        const validateTokenAndFetchPatient = async () => {
             setLoading(true)
+            setLinkState('valid')
+            setErrorMessage(null)
+
             try {
-                const { data, error } = await supabase
-                    .from('patients')
-                    .select('id, first_name, last_name, clinic_id, clinics(name)')
-                    .eq('id', patientId)
+                // 1. Try to find by token in patient_upload_tokens
+                const { data: tData, error: tError } = await supabase
+                    .from('patient_upload_tokens')
+                    .select('id, token, used, used_at, expires_at, patient_id, patients(id, first_name, last_name, clinic_id, clinics(name))')
+                    .eq('token', tokenOrId)
                     .single()
 
-                if (error || !data) {
-                    setErrorMsg('No pudimos encontrar la ficha de paciente solicitada.')
+                if (tData) {
+                    setTokenRecord(tData)
+                    setPatient(tData.patients)
+
+                    // Check if already used
+                    if (tData.used) {
+                        setLinkState('already_used')
+                        setLoading(false)
+                        return
+                    }
+
+                    // Check if expired
+                    if (new Date(tData.expires_at) < new Date()) {
+                        setLinkState('expired')
+                        setLoading(false)
+                        return
+                    }
+
+                    setLinkState('valid')
+                    setLoading(false)
+                    return
+                }
+
+                // 2. Fallback: try searching directly by patient_id
+                const { data: pData, error: pError } = await supabase
+                    .from('patients')
+                    .select('id, first_name, last_name, clinic_id, clinics(name)')
+                    .eq('id', tokenOrId)
+                    .single()
+
+                if (pData) {
+                    setPatient(pData)
+                    setLinkState('valid')
                 } else {
-                    setPatient(data)
+                    setLinkState('invalid')
+                    setErrorMessage('No encontramos ninguna solicitud de archivos asociada a este enlace.')
                 }
             } catch (err) {
-                console.error(err)
-                setErrorMsg('Ocurrió un error al cargar la información.')
+                console.error('Error validating upload link:', err)
+                setLinkState('invalid')
+                setErrorMessage('Ocurrió un error al verificar el enlace.')
             } finally {
                 setLoading(false)
             }
         }
 
-        if (patientId) {
-            fetchPatient()
+        if (tokenOrId) {
+            validateTokenAndFetchPatient()
         }
-    }, [patientId])
+    }, [tokenOrId])
 
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files || [])
-        // Filter strictly images
+        // Strictly filter images
         const imageFiles = files.filter((f) => f.type.startsWith('image/'))
 
         if (imageFiles.length < files.length) {
@@ -74,13 +117,14 @@ const PatientUpload = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        if (selectedFiles.length === 0) return
+        if (selectedFiles.length === 0 || !patient) return
 
         setUploading(true)
         setProgress(10)
-        setErrorMsg(null)
+        setErrorMessage(null)
 
         try {
+            const patientId = patient.id
             let successCount = 0
 
             for (let i = 0; i < selectedFiles.length; i++) {
@@ -120,41 +164,91 @@ const PatientUpload = () => {
                 setProgress(Math.round(((i + 1) / selectedFiles.length) * 100))
             }
 
+            // 4. Burn / Mark token as used so it cannot be reused!
+            if (tokenRecord?.id) {
+                await supabase
+                    .from('patient_upload_tokens')
+                    .update({
+                        used: true,
+                        used_at: new Date().toISOString()
+                    })
+                    .eq('id', tokenRecord.id)
+            }
+
             setSubmitted(true)
         } catch (err) {
             console.error('Error al subir:', err)
-            setErrorMsg('Hubo un problema al subir las fotos. Por favor intentalo nuevamente.')
+            setErrorMessage('Hubo un problema al subir las fotos. Por favor intentalo nuevamente.')
         } finally {
             setUploading(false)
         }
     }
 
-    const resetForm = () => {
-        setSelectedFiles([])
-        setNotes('')
-        setSubmitted(false)
-        setProgress(0)
-    }
-
+    // Loading View
     if (loading) {
         return (
             <div className="min-h-screen bg-pastel-light/40 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center border border-pastel shadow-sm">
                     <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
-                    <p className="text-sm font-medium text-dark/60">Cargando formulario...</p>
+                    <p className="text-sm font-medium text-dark/60">Verificando enlace seguro...</p>
                 </div>
             </div>
         )
     }
 
-    if (errorMsg && !patient) {
+    // Link Already Used View
+    if (linkState === 'already_used') {
         return (
-            <div className="min-h-screen bg-pastel-light/40 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-pastel-light/30 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center border border-pastel shadow-sm">
+                    <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-3xl mx-auto mb-4">
+                        🔒
+                    </div>
+                    <h2 className="text-xl font-bold text-dark mb-2">Enlace ya utilizado</h2>
+                    <p className="text-sm text-dark/70 mb-4 leading-relaxed">
+                        Este enlace de subida era de <strong>un solo uso</strong> y ya fue completado previamente para la ficha de <strong className="text-dark">{patient?.first_name} {patient?.last_name}</strong>.
+                    </p>
+                    <div className="bg-pastel-light/50 rounded-2xl p-4 text-xs text-dark/60 border border-pastel text-left mb-6">
+                        <p className="font-semibold text-dark mb-1">ℹ️ ¿Por qué ocurre esto?</p>
+                        <p>Por seguridad y protección de tus datos médicos, cada enlace se desactiva permanentemente una vez enviadas las fotos para evitar duplicaciones o usos no autorizados.</p>
+                    </div>
+                    <p className="text-xs text-dark/40">
+                        Si necesitás enviar más estudios o radiografías, contactate con la clínica para que te generen un nuevo enlace.
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    // Link Expired View
+    if (linkState === 'expired') {
+        return (
+            <div className="min-h-screen bg-pastel-light/30 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center border border-pastel shadow-sm">
+                    <div className="w-16 h-16 rounded-full bg-red-100 text-error flex items-center justify-center text-3xl mx-auto mb-4">
+                        ⏳
+                    </div>
+                    <h2 className="text-xl font-bold text-dark mb-2">Enlace expirado</h2>
+                    <p className="text-sm text-dark/70 mb-6 leading-relaxed">
+                        Este enlace de subida tenía una validez temporal de 48 horas y ha caducado.
+                    </p>
+                    <p className="text-xs text-dark/40">
+                        Por favor pedile a tu odontólogo que te genere un nuevo enlace para subir tus archivos.
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    // Invalid Link View
+    if (linkState === 'invalid' || !patient) {
+        return (
+            <div className="min-h-screen bg-pastel-light/30 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center border border-pastel shadow-sm">
                     <div className="text-4xl mb-3">⚠️</div>
                     <h2 className="text-lg font-bold text-dark mb-2">Enlace no válido</h2>
-                    <p className="text-sm text-dark/60 mb-6">{errorMsg}</p>
-                    <p className="text-xs text-dark/40">Por favor contactate con la clínica para que te envíen un nuevo link.</p>
+                    <p className="text-sm text-dark/60 mb-6">{errorMessage || 'El enlace que intentás abrir no existe o no es correcto.'}</p>
+                    <p className="text-xs text-dark/40">Por favor contactate con la clínica para solicitar un enlace válido.</p>
                 </div>
             </div>
         )
@@ -183,16 +277,13 @@ const PatientUpload = () => {
                                 ✓
                             </div>
                             <h2 className="text-xl font-bold text-dark mb-2">¡Fotos enviadas con éxito!</h2>
-                            <p className="text-sm text-dark/60 mb-6 leading-relaxed">
+                            <p className="text-sm text-dark/60 mb-4 leading-relaxed">
                                 Muchas gracias, <strong className="text-dark">{patient?.first_name}</strong>. Tus fotos fueron adjuntadas directamente a tu ficha médica para tu próxima atención.
                             </p>
 
-                            <button
-                                onClick={resetForm}
-                                className="w-full bg-pastel-light hover:bg-pastel text-dark font-semibold py-3 px-4 rounded-2xl text-sm transition-colors border border-pastel cursor-pointer"
-                            >
-                                Subir más fotos
-                            </button>
+                            <div className="bg-pastel-light/60 border border-pastel rounded-2xl p-4 text-xs text-dark/60 mb-6">
+                                🔒 Este enlace de un solo uso ha sido completado y desactivado. Ya podés cerrar esta ventana.
+                            </div>
                         </div>
                     ) : (
                         /* Upload Form */
@@ -206,9 +297,15 @@ const PatientUpload = () => {
                                 </p>
                             </div>
 
-                            {errorMsg && (
+                            {/* Single-use badge notice */}
+                            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200/60 rounded-xl px-3 py-2 mb-4 text-[11px] text-amber-900 font-medium">
+                                <span>🔒</span>
+                                <span>Enlace seguro de un solo uso (se desactiva al enviar)</span>
+                            </div>
+
+                            {errorMessage && (
                                 <div className="p-3 mb-4 rounded-xl bg-error/10 text-error text-xs font-medium">
-                                    {errorMsg}
+                                    {errorMessage}
                                 </div>
                             )}
 
@@ -309,7 +406,7 @@ const PatientUpload = () => {
                                 <textarea
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Ej: Radiografía panorámica que me saqué el martes..."
+                                    placeholder="Ej: Radiografía panorámica de hoy..."
                                     rows={2}
                                     className="w-full bg-pastel-light/30 border border-pastel rounded-xl p-3 text-xs text-dark placeholder:text-dark/40 focus:outline-none focus:border-accent"
                                 />
@@ -360,7 +457,7 @@ const PatientUpload = () => {
 
             {/* Footer info */}
             <div className="text-center text-[11px] text-dark/40 py-2">
-                Protegido por DentApp · Los archivos se transmiten de forma cifrada
+                Protegido por DentApp · Enlace cifrado de un solo uso
             </div>
         </div>
     )

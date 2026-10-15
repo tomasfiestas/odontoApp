@@ -1,5 +1,5 @@
 -- 03_patient_files.sql
--- Módulo de Archivos, Radiografías y Estudios por Paciente
+-- Módulo de Archivos, Radiografías y Enlaces Seguros de Un Solo Uso
 
 -- 1. Crear tabla de archivos de pacientes
 CREATE TABLE IF NOT EXISTS public.patient_files (
@@ -22,44 +22,59 @@ CREATE TABLE IF NOT EXISTS public.patient_files (
 CREATE INDEX IF NOT EXISTS idx_patient_files_patient ON public.patient_files(patient_id);
 CREATE INDEX IF NOT EXISTS idx_patient_files_type ON public.patient_files(file_type);
 
--- 2. Habilitar RLS (Row Level Security)
-ALTER TABLE public.patient_files ENABLE ROW LEVEL SECURITY;
+-- 2. Crear tabla de Tokens de Un Solo Uso para subida de pacientes
+CREATE TABLE IF NOT EXISTS public.patient_upload_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    used BOOLEAN NOT NULL DEFAULT false,
+    used_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '48 hours'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- Políticas de RLS:
--- Usuarios autenticados (doctores) pueden ver, insertar y borrar archivos
+CREATE INDEX IF NOT EXISTS idx_upload_tokens_token ON public.patient_upload_tokens(token);
+
+-- 3. Habilitar RLS (Row Level Security)
+ALTER TABLE public.patient_files ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patient_upload_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para patient_files:
 CREATE POLICY "Doctores autenticados pueden ver archivos"
-    ON public.patient_files
-    FOR SELECT
-    TO authenticated
-    USING (true);
+    ON public.patient_files FOR SELECT
+    TO authenticated USING (true);
 
 CREATE POLICY "Doctores autenticados pueden insertar archivos"
-    ON public.patient_files
-    FOR INSERT
-    TO authenticated
-    WITH CHECK (true);
+    ON public.patient_files FOR INSERT
+    TO authenticated WITH CHECK (true);
 
 CREATE POLICY "Doctores autenticados pueden eliminar archivos"
-    ON public.patient_files
-    FOR DELETE
-    TO authenticated
-    USING (true);
+    ON public.patient_files FOR DELETE
+    TO authenticated USING (true);
 
--- Permitir a usuarios anónimos (pacientes con link) subir y registrar archivos
 CREATE POLICY "Pacientes pueden subir archivos vía link público"
-    ON public.patient_files
-    FOR INSERT
-    TO anon
-    WITH CHECK (source = 'patient');
+    ON public.patient_files FOR INSERT
+    TO anon WITH CHECK (source = 'patient');
+
+-- Políticas para patient_upload_tokens:
+CREATE POLICY "Doctores pueden gestionar tokens"
+    ON public.patient_upload_tokens FOR ALL
+    TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Anónimos pueden leer token para validar"
+    ON public.patient_upload_tokens FOR SELECT
+    TO anon USING (true);
+
+CREATE POLICY "Anónimos pueden marcar token como usado"
+    ON public.patient_upload_tokens FOR UPDATE
+    TO anon USING (true) WITH CHECK (used = true);
 
 -- Permitir a anónimos leer datos básicos del paciente para la pantalla de subida
 CREATE POLICY "Acceso público lectura básica de paciente para upload"
-    ON public.patients
-    FOR SELECT
-    TO anon
-    USING (true);
+    ON public.patients FOR SELECT
+    TO anon USING (true);
 
--- 3. Crear Bucket de Supabase Storage para los archivos
+-- 4. Crear Bucket de Supabase Storage para los archivos
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('patient-files', 'patient-files', true)
 ON CONFLICT (id) DO NOTHING;

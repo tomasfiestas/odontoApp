@@ -29,11 +29,12 @@ Guía paso a paso para ejecutar cuando estés en tu casa o tengas acceso al pane
 
 ---
 
-### 3️⃣ `03_patient_files.sql` (Módulo de Archivos, Radiografías y Storage)
+### 3️⃣ `03_patient_files.sql` (Módulo de Archivos, Radiografías, Tokens de 1 solo uso y Storage)
 * **Qué hace:**
   - Crea la tabla `patient_files` para registrar todas las radiografías, fotos clínicas, consentimientos y estudios de cada paciente.
+  - Crea la tabla `patient_upload_tokens` para generar enlaces seguros de un solo uso con expiración a las 48 horas (se queman automáticamente apenas el paciente envía las fotos).
   - Crea el bucket de almacenamiento **`patient-files`** en Supabase Storage.
-  - Configura las políticas de seguridad (RLS) para que los doctores tengan control total y los pacientes que reciban el enlace público solo puedan subir imágenes (`jpg`, `jpeg`, `png`, `webp`).
+  - Configura las políticas de seguridad (RLS) para doctores y pacientes anónimos.
 * **Archivo:** [`03_patient_files.sql`](./03_patient_files.sql)
 
 ---

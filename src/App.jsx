@@ -36,6 +36,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/accion/turno" element={<AppointmentAction />} />
+              <Route path="/subir-archivos/:token" element={<PatientUpload />} />
               <Route path="/pacientes/:id/subir-archivos" element={<PatientUpload />} />
 
               {/* Protected routes with Layout */}
