@@ -327,13 +327,13 @@ clinical_history  1──N  payments
 - Pantalla Forgot Password
 - Trigger en Supabase para crear `profiles` automáticamente
 
-### 🔲 Fase 2 — Layout + Home
+### ✅ Fase 2 — Layout + Home
 - Layout base con sidebar o bottom nav
 - Pantalla Home con grid de acciones
 - FAB con Speed Dial
 - Integración de datos del usuario logueado
 
-### 🔲 Fase 3 — Módulo Pacientes
+### ✅ Fase 3 — Módulo Pacientes
 - Lista de pacientes con scroll infinito
 - Búsqueda por apellido (debounce)
 - Filtro por clínica
@@ -342,25 +342,36 @@ clinical_history  1──N  payments
 - Pantalla Detalle Paciente
 - Editar / Eliminar paciente
 
-### 🔲 Fase 4 — Historia Clínica
+### ✅ Fase 4 — Historia Clínica
 - Lista de entradas HC por paciente
 - Estado vacío con mensaje
 - Modal "Nueva entrada HC"
 - Generación automática de turno al guardar HC
 - Sección de pago dentro de la entrada
 
-### 🔲 Fase 5 — Turnos
+### ✅ Fase 5 — Turnos & Calendario
 - Lista de turnos por paciente
 - Agendar nuevo turno manual
 - Vista calendario mensual
 - Filtro por clínica en calendario
 
-### 🔲 Fase 6 — Pulido y Deploy
-- Responsive mobile-first
-- Loading states y skeletons
-- Manejo de errores global (toast notifications)
-- Deploy en Vercel
-- Variables de entorno en producción
+### ✅ Fase 6 — Odontograma
+- Visualización interactiva de piezas dentales
+- Diagnósticos y colores por cara dental
+- Persistencia en base de datos Supabase
+
+### ✅ Fase 7 — Automatización de Recordatorios por Email (Resend)
+- Preferencias de recordatorios en perfil del doctor
+- Función RPC para confirmación/cancelación de turnos sin login
+- Pantalla pública `/accion/turno`
+
+### ✅ Fase 8 — Módulo de Radiografías y Archivos
+- Almacenamiento en Supabase Storage (bucket `patient-files`)
+- Galería profesional con Negatoscopio Digital (Lightbox con zoom y rotación 90°)
+- Enlaces seguros de 1 solo uso con quemado automático (`/subir-archivos/:token`)
+- Portal móvil para que el paciente suba fotos con la cámara o galería
+
+### 🔲 Fase 9 — Alertas Médicas Críticas & Cuenta Corriente
 
 ---
 

@@ -4,34 +4,35 @@ Este documento recopila las funcionalidades clave diseñadas para resolver los d
 
 ---
 
-## 🗂️ 1. Módulo de Archivos, Radiografías y Estudios (En Desarrollo)
+## 🗂️ 1. Módulo de Archivos, Radiografías y Estudios (✅ Implementado v1.0)
 
 ### Visión
 Los odontólogos trabajan intensamente con material visual (radiografías periapicales, panorámicas, tomografías, fotos intraorales de evolución). Actualmente, este material suele dispersarse en chats de WhatsApp o carpetas locales no sincronizadas.
 
-### Componentes Clave:
+### Componentes Implementados:
 1. **Almacenamiento (Supabase Storage):**
-   - Bucket: `patient-files`
+   - Bucket: `patient-files` (script `03_patient_files.sql`).
    - Soporte para imágenes de alta definición y documentos médicos (`.jpg`, `.jpeg`, `.png`, `.webp`, `.pdf`).
-2. **Carga por el Profesional (Clínica / Consultorio):**
-   - Zona Drag & Drop interactiva en la ficha de cada paciente.
-   - Selector manual de archivos.
+2. **Carga y Gestión por el Profesional (`PatientFiles.jsx`):**
+   - Acceso directo desde la ficha del paciente (`PatientDetail.jsx`).
+   - Zona **Drag & Drop** interactiva + selector manual de archivos de la PC.
    - Categorización rápida:
      - 🩻 **Radiografías** (Panorámicas, periapicales, bite-wing, oclusales).
      - 📸 **Fotos Clínicas** (Antes / Después, seguimiento estético u ortodóntico).
      - 📑 **Consentimientos y Recetas** (Documentación firmada, respaldo legal).
      - 📄 **Estudios y Tomografías** (Informes externos, análisis cefalométricos).
-3. **Enlace Público para el Paciente (Mobile-First):**
-   - El doctor genera un link temporal (o lo manda por WhatsApp en un clic).
-   - El paciente abre el link en su celular y puede:
-     - Sacar una foto con la cámara (ej. a su radiografía física o a su boca).
-     - Seleccionar múltiples fotos de su galería.
-     - Subir sin necesidad de crearse una cuenta ni iniciar sesión.
-   - Restricción: En el portal del paciente solo se permite subida de imágenes para prevenir cargas maliciosas.
-4. **Visor Integrado (Lightbox):**
-   - Zoom interactivo para diagnóstico fino.
-   - Modo pantalla completa.
-   - Comparador "Antes vs Después".
+   - Distintivo visual de origen: `👨‍⚕️ Doctor` o `📸 Paciente`.
+3. **Enlaces Seguros de Un Solo Uso (`PatientUpload.jsx`):**
+   - Generación de token UUID único con validez de 48 horas (`patient_upload_tokens`).
+   - **Quema automática:** Apenas el paciente envía sus fotos, el enlace se marca como `used = true` y queda desactivado permanentemente para proteger la privacidad.
+   - Pantalla explicativa amigable si el paciente intenta volver a ingresar a un enlace ya utilizado o vencido.
+   - Botón directo para compartir por **WhatsApp** con mensaje prearmado.
+   - Mobile-First: Cámara del celular o selección múltiple desde la galería de fotos.
+4. **Negatoscopio Digital (Lightbox):**
+   - Zoom interactivo (`+` y `-`).
+   - Rotación en 90° para inspección anatómica.
+   - Navegación entre imágenes con teclado (flechas) y botones.
+   - Descarga directa en alta resolución.
 
 ---
 

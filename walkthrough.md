@@ -31,3 +31,28 @@ Se realizaron los siguientes cambios en la aplicación web:
 
 > [!TIP]
 > Prueba correr la aplicación localmente y navega a `/settings` para probar la nueva configuración de Alertas Automáticas. También puedes ver la pantalla de confirmación navegando manualmente a `/accion/turno?id=algo&action=confirm` (dará error porque el ID no es válido, pero podrás ver el diseño).
+
+---
+
+# Módulo de Radiografías, Archivos y Enlaces de 1 Solo Uso (Finalizado)
+
+Se completó la implementación del sistema de gestión visual de pacientes (radiografías, fotos clínicas, consentimientos) y el portal de subida para pacientes con enlaces de un solo uso.
+
+## 1. Base de Datos & Almacenamiento (Supabase)
+Se creó la migración [`03_patient_files.sql`](./03_patient_files.sql):
+- **Tabla `patient_files`:** Almacena registros con `file_url`, `file_type` (`radiografia`, `foto_clinica`, `consentimiento`, `estudio`), `mime_type`, `size_bytes`, notas y autoría (`source`: `doctor` o `patient`).
+- **Tabla `patient_upload_tokens`:** Maneja tokens únicos (UUID) con vencimiento de 48 horas y campo `used BOOLEAN` para desactivación automática.
+- **Bucket `patient-files`:** Configurado en Supabase Storage con políticas RLS para acceso público de lectura y subidas de imágenes filtradas para anónimos.
+
+## 2. Pantalla del Odontólogo (`PatientFiles.jsx`)
+- **Acceso:** Ruta `/patients/:id/files` y acceso directo desde los botones de acción de [`PatientDetail.jsx`](./src/pages/PatientDetail.jsx).
+- **Subida Profesional:** Drag & Drop en pantalla completa o buscador de archivos con selector de categoría y barra de progreso.
+- **Galería Visual:** Tarjetas con miniatura, fecha, tamaño, notas y distintivos de categoría y origen (`👨‍⚕️ Doctor` vs `📸 Paciente`).
+- **Negatoscopio Digital (Lightbox):** Visor con fondo oscuro, zoom interactivo, rotación en 90°, descarga y navegación por teclado (flechas y escape).
+- **Generador de Enlaces:** Modal con botón de WhatsApp que genera el token seguro y arma el mensaje directo para el paciente.
+
+## 3. Portal de Subida del Paciente (`PatientUpload.jsx`)
+- **Ruta Pública:** `/subir-archivos/:token`.
+- **Mobile-First:** Diseñado para abrirse en el celular del paciente con acceso a la cámara o galería.
+- **Seguridad "Burn-after-use":** Una vez que el paciente presiona *Enviar fotos*, el token se quema permanentemente.
+- **Validaciones Amigables:** Pantallas de bloqueo claras si el enlace ya fue utilizado o si expiró tras 48 horas.
