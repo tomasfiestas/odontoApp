@@ -36,43 +36,53 @@ Los odontólogos trabajan intensamente con material visual (radiografías periap
 
 ---
 
-## 📑 2. Planes de Tratamiento y Presupuestos
+## 📑 2. Planes de Tratamiento y Presupuestos (✅ Implementado v1.0)
 
-### El Problema
-La mayoría de los tratamientos odontológicos abarcan varias sesiones y múltiples especialidades (limpieza, endodoncia, perno y corona). Los odontólogos pierden tiempo cotizando en cuadernos o Excel y recalculando cuotas.
-
-### La Solución
-- Crear presupuestos vinculados al Odontograma.
-- Agrupar por fases clínicas (Fase 1: Salud e higiene, Fase 2: Terapéutica, Fase 3: Rehabilitación).
-- **Generación de Presupuesto en PDF con un clic:** Con membrete de la clínica, detalle de prestaciones, costos y forma de pago.
-- Envío directo al WhatsApp o email del paciente.
-- Estado del tratamiento: *Borrador / Presentado / Aceptado / En curso / Finalizado*.
-
----
-
-## 💰 3. Cuenta Corriente y Saldo del Paciente
-
-### El Problema
-Los tratamientos extensos suelen pagarse en cuotas informales entre sesiones. Saber quién debe dinero antes de sentarlo en el sillón es crítico para la rentabilidad de la clínica.
-
-### La Solución
-- **Semáforo de Saldo en la Ficha del Paciente:**
-  - 🟢 **Al día**
-  - 🔴 **Saldo deudor:** Muestra clara del monto pendiente (ej. `Deuda: $45.000`).
-- Registro ágil de pagos parciales en cada turno (efectivo, transferencia, tarjeta).
-- Historial transparente de cargos vs. abonos.
+### Componentes Implementados:
+- **Gestión Multi-Prestación (`PatientTreatmentPlans.jsx` & `TreatmentPlanModal.jsx`):**
+  - Armado de presupuestos con título, notas y múltiples prestaciones desglosadas por pieza dental (FDI 11 a 48 o General), costo unitario y estado del procedimiento (*Pendiente, En curso, Realizado*).
+  - Cálculo dinámico de totales en tiempo real.
+  - Flujo de estados del presupuesto: *Borrador ➔ Presentado ➔ Aceptado ➔ En curso ➔ Finalizado ➔ Rechazado*.
+- **Generación de Presupuesto Imprimible / PDF:**
+  - Vista clínica formal (`window.print()`) con membrete de la clínica, datos completos del paciente, tabla detallada de prestaciones y firmas de conformidad (Profesional y Paciente).
+- **Compartir por WhatsApp en 1 Clic:**
+  - Generador de mensaje preformateado con el desglose del plan y el total para enviar instantáneamente al chat del paciente.
 
 ---
 
-## ⚠️ 4. Alertas Médicas Críticas (Banderas Rojas)
+## 💰 3. Cuenta Corriente y Saldo del Paciente (✅ Implementado v1.0)
 
-### El Problema
-Riesgo médico y mala praxis: un odontólogo atiende 15 pacientes al día y no siempre recuerda si el paciente de turno es alérgico a la penicilina, si toma anticoagulantes o si padece hipertensión arterial (lo cual condiciona el uso de anestesia con vasoconstrictor como epinefrina).
+### Componentes Implementados:
+- **Semáforo de Saldo en la Ficha del Paciente (`PatientDetail.jsx`):**
+  - 🟢 **Al día (Sin saldo pendiente):** Cuando todos los planes aceptados/en curso están saldados.
+  - 🔴 **Saldo Deudor:** Muestra destacada del monto pendiente en pesos (ej. `$ 45.000`), parpadeante para máxima atención.
+- **Registro Rápido de Cobros (`PaymentModal.jsx`):**
+  - Botón directo `💰 + Registrar Cobro` en la cabecera del paciente y en el panel de presupuestos.
+  - Selección de método de pago: *Efectivo, Transferencia bancaria, Tarjeta de débito/crédito, Otro*.
+  - Posibilidad de imputar el pago a un presupuesto específico o como pago a cuenta general.
+- **Historial de Cobros y Balance:**
+  - Tabla de recibos con fecha, método de pago, presupuesto asociado y notas del pago.
 
-### La Solución
-- Banner superior destacado en rojo en la ficha del paciente y en el modal de turno rápido:
-  > 🚨 **ALERTA CLÍNICA:** *Alérgico a Penicilina | Hipertenso (Requiere anestésico sin vasoconstrictor)*.
-- Checklist rápido de anamnesis al dar de alta al paciente.
+---
+
+## ⚠️ 4. Alertas Médicas Críticas / Banderas Rojas (✅ Implementado v1.0)
+
+### Componentes Implementados:
+- **Checklist Clínico en Alta/Edición (`PatientModal.jsx`):**
+  - Selector interactivo tipo badge de condiciones de alto riesgo:
+    - 💊 **Alérgico a Penicilina**
+    - ❤️ **Hipertensión (Sin vasoconstrictor)**
+    - 🩸 **Anticoagulado**
+    - 💉 **Diabetes**
+    - 🫀 **Cardiopatía**
+    - 🤰 **Embarazo**
+    - 🧤 **Alergia al Látex**
+    - 💊 **Alergia a AINEs**
+  - Campos abiertos para alergias adicionales y medicación habitual / antecedentes clínicos.
+- **Banner de Máxima Visibilidad en la Ficha (`PatientDetail.jsx`):**
+  - Franja roja superior con ícono de advertencia pulsante `⚠️ ALERTAS MÉDICAS CRÍTICAS (ANAMNESIS)` visible al instante para evitar cualquier error de medicación o anestesia.
+- **Badges en el Listado de Pacientes (`Patients.jsx`):**
+  - Indicador `🚨 Alerta Médica` visible directamente en la tarjeta de cada paciente para advertir al profesional antes de abrir su expediente.
 
 ---
 

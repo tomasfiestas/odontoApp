@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
+export const MEDICAL_ALERT_OPTIONS = [
+    { id: 'penicilina', label: 'Alergia a Penicilina', icon: '💊', danger: true },
+    { id: 'hipertension', label: 'Hipertensión (Sin vasoconstrictor)', icon: '🩸', danger: true },
+    { id: 'anticoagulado', label: 'Anticoagulado (Riesgo hemorragia)', icon: '🩹', danger: true },
+    { id: 'diabetes', label: 'Diabetes', icon: '🩺', danger: false },
+    { id: 'cardiopatia', label: 'Cardiopatía / Profilaxis', icon: '🫀', danger: true },
+    { id: 'embarazo', label: 'Embarazo', icon: '🤰', danger: false },
+    { id: 'latex', label: 'Alergia a Látex', icon: '🧤', danger: false },
+    { id: 'aines', label: 'Alergia a AINEs (Ibuprofeno)', icon: '⚠️', danger: true },
+]
+
 const emptyForm = {
     first_name: '',
     last_name: '',
@@ -12,6 +23,9 @@ const emptyForm = {
     obra_social: '',
     observations: '',
     clinic_id: '',
+    medical_alerts: [],
+    allergies: '',
+    medical_notes: '',
 }
 
 const PatientModal = ({ isOpen, onClose, onSaved, patient = null }) => {
@@ -52,6 +66,9 @@ const PatientModal = ({ isOpen, onClose, onSaved, patient = null }) => {
                 obra_social: patient.obra_social || '',
                 observations: patient.observations || '',
                 clinic_id: patient.clinic_id || '',
+                medical_alerts: Array.isArray(patient.medical_alerts) ? patient.medical_alerts : [],
+                allergies: patient.allergies || '',
+                medical_notes: patient.medical_notes || '',
             })
         } else if (isOpen) {
             setForm(emptyForm)
@@ -59,6 +76,15 @@ const PatientModal = ({ isOpen, onClose, onSaved, patient = null }) => {
         setErrors({})
         setApiError('')
     }, [isOpen, patient])
+
+    const toggleAlert = (alertId) => {
+        setForm((prev) => {
+            const current = prev.medical_alerts || []
+            const exists = current.includes(alertId)
+            const updated = exists ? current.filter((id) => id !== alertId) : [...current, alertId]
+            return { ...prev, medical_alerts: updated }
+        })
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -95,6 +121,9 @@ const PatientModal = ({ isOpen, onClose, onSaved, patient = null }) => {
                 obra_social: form.obra_social.trim() || null,
                 observations: form.observations.trim() || null,
                 clinic_id: form.clinic_id,
+                medical_alerts: form.medical_alerts || [],
+                allergies: form.allergies.trim() || null,
+                medical_notes: form.medical_notes.trim() || null,
             }
 
             if (isEdit) {
@@ -214,6 +243,70 @@ const PatientModal = ({ isOpen, onClose, onSaved, patient = null }) => {
                             ))}
                         </select>
                         {errors.clinic_id && <p className="text-xs text-error mt-1">{errors.clinic_id}</p>}
+                    </div>
+
+                    {/* Medical Alerts (Anamnesis) */}
+                    <div className="bg-red-50/50 rounded-2xl p-4 border border-red-100">
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <span className="text-base">🚨</span>
+                            <label className="text-xs font-bold text-red-950">
+                                Alertas Médicas Críticas (Anamnesis)
+                            </label>
+                        </div>
+                        <p className="text-[11px] text-red-900/70 mb-3">
+                            Marcá condiciones clínicas de riesgo antes de administrar anestesia o recetar:
+                        </p>
+
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                            {MEDICAL_ALERT_OPTIONS.map((opt) => {
+                                const isSelected = form.medical_alerts?.includes(opt.id)
+                                return (
+                                    <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => toggleAlert(opt.id)}
+                                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                                            isSelected
+                                                ? opt.danger
+                                                    ? 'bg-error text-white border-error shadow-xs font-semibold'
+                                                    : 'bg-amber-500 text-white border-amber-500 shadow-xs font-semibold'
+                                                : 'bg-white text-dark/70 border-red-200/60 hover:bg-red-50'
+                                        }`}
+                                    >
+                                        <span>{opt.icon}</span>
+                                        <span>{opt.label}</span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            <div>
+                                <label className="block text-[11px] font-medium text-dark/70 mb-1">
+                                    Otras alergias conocidas
+                                </label>
+                                <input
+                                    name="allergies"
+                                    value={form.allergies}
+                                    onChange={handleChange}
+                                    placeholder="Ej: Metronidazol, Yodo..."
+                                    className="w-full px-3 py-1.5 rounded-xl border border-red-200/60 bg-white text-xs text-dark placeholder:text-dark/30 focus:outline-none focus:border-error"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-dark/70 mb-1">
+                                    Medicación habitual / Antecedentes
+                                </label>
+                                <input
+                                    name="medical_notes"
+                                    value={form.medical_notes}
+                                    onChange={handleChange}
+                                    placeholder="Ej: Enalapril 10mg, Marcapasos..."
+                                    className="w-full px-3 py-1.5 rounded-xl border border-red-200/60 bg-white text-xs text-dark placeholder:text-dark/30 focus:outline-none focus:border-error"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Observations */}

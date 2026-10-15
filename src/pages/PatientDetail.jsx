@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import PatientModal from '../components/PatientModal'
+import PatientModal, { MEDICAL_ALERT_OPTIONS } from '../components/PatientModal'
+import PaymentModal from '../components/PaymentModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { SkeletonDetail } from '../components/Skeleton'
 
@@ -23,6 +24,9 @@ const PatientDetail = () => {
     const [editOpen, setEditOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+    const [financial, setFinancial] = useState({ totalPlans: 0, totalPaid: 0, balanceDue: 0, hasPlans: false })
+    const [plansList, setPlansList] = useState([])
 
     const fetchPatient = async () => {
         setLoading(true)
@@ -35,6 +39,38 @@ const PatientDetail = () => {
         if (!error && data) {
             setPatient(data)
         }
+
+        // Fetch treatment plans & payments to compute current account balance
+        try {
+            const { data: plansData } = await supabase
+                .from('treatment_plans')
+                .select('id, title, status, total_amount')
+                .eq('patient_id', id)
+
+            const { data: payData } = await supabase
+                .from('payments')
+                .select('amount')
+                .eq('patient_id', id)
+
+            if (plansData) setPlansList(plansData)
+
+            const totalPlans = (plansData || [])
+                .filter((p) => ['aceptado', 'en_curso', 'finalizado'].includes(p.status))
+                .reduce((acc, p) => acc + (parseFloat(p.total_amount) || 0), 0)
+
+            const totalPayments = (payData || []).reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0)
+            const due = Math.max(0, totalPlans - totalPayments)
+
+            setFinancial({
+                totalPlans,
+                totalPaid: totalPayments,
+                balanceDue: due,
+                hasPlans: (plansData || []).length > 0,
+            })
+        } catch (fErr) {
+            console.warn('Financial calculation warning:', fErr)
+        }
+
         setLoading(false)
     }
 
@@ -108,8 +144,98 @@ const PatientDetail = () => {
                 </div>
             </div>
 
+            {/* Medical Alerts Banner */}
+            {(patient.medical_alerts?.length > 0 || patient.allergies || patient.medical_notes) && (
+                <div className="bg-red-50/90 border-2 border-red-300 rounded-2xl p-5 mb-6 shadow-xs">
+                    <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-red-100 text-error flex items-center justify-center text-xl shrink-0 shadow-inner">
+                            🚨
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <h3 className="text-sm font-bold text-red-950 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>Alerta Médica Crítica</span>
+                                </h3>
+                                <span className="text-[10px] font-bold text-red-800 bg-red-200/70 px-2.5 py-0.5 rounded-full">
+                                    Verificar antes de anestesiar / recetar
+                                </span>
+                            </div>
+
+                            {/* Tags */}
+                            {patient.medical_alerts?.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                                    {patient.medical_alerts.map((alertId) => {
+                                        const opt = MEDICAL_ALERT_OPTIONS.find((o) => o.id === alertId)
+                                        if (!opt) return null
+                                        return (
+                                            <span
+                                                key={alertId}
+                                                className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-bold ${
+                                                    opt.danger
+                                                        ? 'bg-error text-white shadow-xs'
+                                                        : 'bg-amber-600 text-white shadow-xs'
+                                                }`}
+                                            >
+                                                <span>{opt.icon}</span>
+                                                <span>{opt.label}</span>
+                                            </span>
+                                        )
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Detailed Notes */}
+                            <div className="text-xs text-red-950 space-y-1">
+                                {patient.allergies && (
+                                    <p>
+                                        <strong className="font-semibold text-red-900">Alergias específicas:</strong> {patient.allergies}
+                                    </p>
+                                )}
+                                {patient.medical_notes && (
+                                    <p>
+                                        <strong className="font-semibold text-red-900">Medicación / Antecedentes:</strong> {patient.medical_notes}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Financial Balance Summary Banner (Semáforo de Saldo) */}
+            <div className="bg-white rounded-2xl border border-pastel p-4 sm:p-5 mb-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className={`w-3.5 h-3.5 rounded-full shrink-0 ${financial.balanceDue <= 0 ? 'bg-success' : 'bg-error animate-pulse'}`} />
+                    <div>
+                        <span className="text-[10px] font-bold text-dark/40 uppercase tracking-wider block">
+                            Cuenta Corriente / Saldo
+                        </span>
+                        <h3 className="text-base font-extrabold text-dark">
+                            {financial.balanceDue <= 0
+                                ? '🟢 Al día (Sin saldo pendiente)'
+                                : `🔴 Saldo Deudor: $ ${new Intl.NumberFormat('es-AR').format(financial.balanceDue)}`}
+                        </h3>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setPaymentModalOpen(true)}
+                        className="bg-pastel-light hover:bg-pastel text-dark text-xs font-semibold px-3 py-2 rounded-xl border border-pastel transition-colors cursor-pointer"
+                    >
+                        💰 + Registrar Cobro
+                    </button>
+                    <Link
+                        to={`/patients/${id}/plans`}
+                        className="bg-accent hover:bg-accent-hover text-dark text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-xs"
+                    >
+                        Ver Presupuestos
+                    </Link>
+                </div>
+            </div>
+
             {/* Action buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
                 <Link
                     to={`/patients/${id}/odontogram`}
                     className="flex items-center gap-2.5 bg-white rounded-2xl border border-pastel p-4
@@ -121,6 +247,19 @@ const PatientDetail = () => {
                         </svg>
                     </div>
                     <span className="text-sm font-medium text-dark">Odontograma</span>
+                </Link>
+
+                <Link
+                    to={`/patients/${id}/plans`}
+                    className="flex items-center gap-2.5 bg-white rounded-2xl border border-pastel p-4
+                     hover:shadow-md hover:border-accent/30 transition-all duration-200 group"
+                >
+                    <div className="p-2 rounded-xl bg-pastel-light text-accent group-hover:bg-accent group-hover:text-dark transition-all duration-200">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <span className="text-sm font-medium text-dark">Presupuestos</span>
                 </Link>
 
                 <Link
@@ -255,6 +394,16 @@ const PatientDetail = () => {
                 confirmLabel={deleting ? 'Eliminando...' : 'Eliminar'}
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteOpen(false)}
+            />
+
+            {/* Quick Payment Modal */}
+            <PaymentModal
+                isOpen={paymentModalOpen}
+                onClose={() => setPaymentModalOpen(false)}
+                onSaved={fetchPatient}
+                patientId={id}
+                patientName={`${patient?.first_name || ''} ${patient?.last_name || ''}`}
+                plans={plansList}
             />
         </div>
     )

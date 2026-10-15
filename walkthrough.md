@@ -56,3 +56,37 @@ Se creó la migración [`03_patient_files.sql`](./03_patient_files.sql):
 - **Mobile-First:** Diseñado para abrirse en el celular del paciente con acceso a la cámara o galería.
 - **Seguridad "Burn-after-use":** Una vez que el paciente presiona *Enviar fotos*, el token se quema permanentemente.
 - **Validaciones Amigables:** Pantallas de bloqueo claras si el enlace ya fue utilizado o si expiró tras 48 horas.
+
+---
+
+# Módulos Clínicos de Alto Impacto (Finalizados)
+
+Se completó la implementación de las tres funcionalidades clave para la práctica odontológica diaria:
+
+## 1. Alertas Médicas Críticas / Banderas Rojas (Anamnesis)
+- **Migración SQL:** Columnas `medical_alerts TEXT[]`, `allergies TEXT`, `medical_notes TEXT` agregadas a `patients` en [`04_clinical_enhancements.sql`](./04_clinical_enhancements.sql).
+- **Checklist Rápido:** Integrado en el alta y edición de pacientes ([`PatientModal.jsx`](./src/components/PatientModal.jsx)) con selector visual de 8 alertas críticas (Penicilina, Hipertensión s/ vasoconstrictor, Anticoagulado, Diabetes, etc.).
+- **Banner de Riesgo:** Franja roja de alerta máxima en [`PatientDetail.jsx`](./src/pages/PatientDetail.jsx) con ícono de peligro pulsante y detalle de medicación.
+- **Badge en Listado:** Etiqueta `🚨 Alerta Médica` en la tarjeta de cada paciente en [`Patients.jsx`](./src/pages/Patients.jsx).
+
+## 2. Planes de Tratamiento y Presupuestos
+- **Migración SQL:** Tablas `treatment_plans` y `treatment_plan_items` en [`04_clinical_enhancements.sql`](./04_clinical_enhancements.sql) con soporte para estados (*borrador, presentado, aceptado, en_curso, finalizado, rechazado*).
+- **Gestión Multi-Prestación ([`PatientTreatmentPlans.jsx`](./src/pages/PatientTreatmentPlans.jsx) y [`TreatmentPlanModal.jsx`](./src/components/TreatmentPlanModal.jsx)):**
+  - Creador de planes con desglose de ítems por pieza dental (FDI 11 a 48 o General), costo unitario, descripción y estado del procedimiento.
+  - Cálculo automático de totales.
+- **Presupuesto Imprimible / PDF:**
+  - Formato membretado profesional listo para imprimir (`window.print()`) o exportar a PDF, con firmas de conformidad del doctor y paciente.
+- **Compartir por WhatsApp:**
+  - Generador de mensaje prearmado con desglose de prestaciones y monto total para enviar al WhatsApp del paciente.
+
+## 3. Cuenta Corriente y Saldo del Paciente
+- **Migración SQL:** Tabla `payments` vinculada al paciente y plan de tratamiento, con RLS.
+- **Semáforo de Saldo en la Ficha:**
+  - `🟢 Al día (Sin saldo pendiente)` cuando los tratamientos aceptados están cubiertos.
+  - `🔴 Saldo Deudor: $ [Monto]` en rojo con pulso de atención cuando existen cuotas pendientes.
+- **Registro Rápido de Cobros ([`PaymentModal.jsx`](./src/components/PaymentModal.jsx)):**
+  - Modal accesible con 1 clic desde la ficha y desde el panel de presupuestos.
+  - Selección de método de pago (Efectivo, Transferencia, Débito/Crédito) y opción de imputar a un presupuesto específico.
+- **Historial de Cobros:**
+  - Tabla de recibos con detalle de fecha, método, monto y comprobante.
+

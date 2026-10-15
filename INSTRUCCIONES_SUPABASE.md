@@ -39,6 +39,15 @@ Guía paso a paso para ejecutar cuando estés en tu casa o tengas acceso al pane
 
 ---
 
+### 4️⃣ `04_clinical_enhancements.sql` (Alertas Médicas, Presupuestos y Cuenta Corriente)
+* **Qué hace:**
+  - Agrega columnas de alertas médicas a `patients` (`medical_alerts`, `allergies`, `medical_notes`).
+  - Crea las tablas `treatment_plans` y `treatment_plan_items` para cotizaciones y presupuestos en PDF.
+  - Configura la tabla `payments` para seguimiento de cuenta corriente y pagos parciales.
+* **Archivo:** [`04_clinical_enhancements.sql`](./04_clinical_enhancements.sql)
+
+---
+
 ## 📦 Verificación en Supabase Storage
 Luego de correr el script `03_patient_files.sql`:
 1. En el menú lateral de Supabase, andá a **Storage**.

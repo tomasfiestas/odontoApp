@@ -20,6 +20,7 @@ import Billing from './pages/Billing'
 import Settings from './pages/Settings'
 import PatientFiles from './pages/PatientFiles'
 import PatientUpload from './pages/PatientUpload'
+import PatientTreatmentPlans from './pages/PatientTreatmentPlans'
 
 import AppointmentAction from './pages/AppointmentAction'
 
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/patients/:id/appointments" element={<PatientAppointments />} />
                 <Route path="/patients/:id/odontogram" element={<PatientOdontogram />} />
                 <Route path="/patients/:id/files" element={<PatientFiles />} />
+                <Route path="/patients/:id/plans" element={<PatientTreatmentPlans />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/clinics" element={<Clinics />} />
                 <Route path="/billing" element={<Billing />} />

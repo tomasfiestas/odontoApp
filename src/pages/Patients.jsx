@@ -41,7 +41,7 @@ const Patients = () => {
 
         let query = supabase
             .from('patients')
-            .select('id, first_name, last_name, dni, clinic_id, clinics(name)', { count: 'exact' })
+            .select('id, first_name, last_name, dni, clinic_id, medical_alerts, allergies, clinics(name)', { count: 'exact' })
             .order('last_name', { ascending: true })
             .range(from, to)
 
@@ -165,9 +165,20 @@ const Patients = () => {
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-dark truncate">
-                                        {patient.last_name}, {patient.first_name}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm font-semibold text-dark truncate">
+                                            {patient.last_name}, {patient.first_name}
+                                        </p>
+                                        {(patient.medical_alerts?.length > 0 || patient.allergies) && (
+                                            <span
+                                                className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold bg-red-100 text-error px-2 py-0.5 rounded-md border border-red-200/50"
+                                                title="Tiene alertas médicas registradas"
+                                            >
+                                                <span>🚨</span>
+                                                <span className="hidden sm:inline">Alerta Médica</span>
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-xs text-dark/40 mt-0.5">
                                         DNI: {patient.dni}
                                     </p>
