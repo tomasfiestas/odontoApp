@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-white: #FFFFFF;
+  --color-pastel-light: #FFFDE7;
+  --color-pastel: #FFF9C4;
+  --color-accent: #F9E04B;
+  --color-accent-hover: #e6cc2f;
+  --color-dark: #1A1A2E;
+  --color-gray-soft: #F5F5F5;
+  --color-error: #E53E3E;
+  --color-success: #38A169;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-dark);
+    background-color: var(--color-white);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: fadeSlideUp 0.2s ease-out both;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
