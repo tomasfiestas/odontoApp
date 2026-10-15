@@ -18,6 +18,8 @@ import Calendar from './pages/Calendar'
 import Clinics from './pages/Clinics'
 import Billing from './pages/Billing'
 import Settings from './pages/Settings'
+import PatientFiles from './pages/PatientFiles'
+import PatientUpload from './pages/PatientUpload'
 
 import AppointmentAction from './pages/AppointmentAction'
 
@@ -34,6 +36,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/accion/turno" element={<AppointmentAction />} />
+              <Route path="/pacientes/:id/subir-archivos" element={<PatientUpload />} />
 
               {/* Protected routes with Layout */}
               <Route
@@ -49,6 +52,7 @@ function App() {
                 <Route path="/patients/:id/history" element={<ClinicalHistory />} />
                 <Route path="/patients/:id/appointments" element={<PatientAppointments />} />
                 <Route path="/patients/:id/odontogram" element={<PatientOdontogram />} />
+                <Route path="/patients/:id/files" element={<PatientFiles />} />
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/clinics" element={<Clinics />} />
                 <Route path="/billing" element={<Billing />} />
